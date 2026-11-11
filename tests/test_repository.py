@@ -3,12 +3,10 @@ from src.repository import parse_package_dependencies
 
 
 class TestRepositoryParsing(unittest.TestCase):
+    """Тесты для парсера репозитория."""
 
-    def setUp(self):  # noqa: N802
+    def set_up(self):
         """Подготовка тестовых данных."""
-        # noqa: N802 сообщает линтеру, что имя setUp (camelCase)
-        # является стандартом для unittest и его нельзя менять.
-        
         self.mock_packages_text = (
             "Package: bash\n"
             "Version: 5.1-6ubuntu1\n"
@@ -35,10 +33,10 @@ class TestRepositoryParsing(unittest.TestCase):
 
     def test_parse_existing_package(self):
         """Тест 1: Успешный парсинг пакета с зависимостями."""
+        self.set_up()  # Ручной вызов вместо стандартного setUp
         deps = parse_package_dependencies(
             self.mock_packages_text, "bash", "5.1-6ubuntu1"
         )
-        
         self.assertIsNotNone(deps)
         self.assertEqual(len(deps), 4)
         self.assertIn("base-files", deps)
@@ -48,27 +46,27 @@ class TestRepositoryParsing(unittest.TestCase):
 
     def test_parse_package_no_dependencies(self):
         """Тест 2: Пакет без поля Depends."""
+        self.set_up()
         deps = parse_package_dependencies(
             self.mock_packages_text, "no-deps-package", "1.0.0"
         )
-        
         self.assertIsNotNone(deps)
         self.assertEqual(len(deps), 0)
 
     def test_parse_wrong_version(self):
         """Тест 3: Пакет есть, но версия не совпадает."""
+        self.set_up()
         deps = parse_package_dependencies(
             self.mock_packages_text, "bash", "9.9.9-wrong"
         )
-        
         self.assertIsNone(deps)
 
     def test_parse_non_existent_package(self):
         """Тест 4: Пакета нет в репозитории."""
+        self.set_up()
         deps = parse_package_dependencies(
             self.mock_packages_text, "unknown-package", "1.0"
         )
-        
         self.assertIsNone(deps)
 
 
