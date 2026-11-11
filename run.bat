@@ -1,5 +1,4 @@
 @echo off
-REM 
 
 if "%1"=="test" (
     echo [TEST MODE] Running with test repository...
