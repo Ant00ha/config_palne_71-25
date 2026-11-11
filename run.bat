@@ -1,11 +1,13 @@
 @echo off
 REM 
-REM  1
 
 if "%1"=="test" (
     echo [TEST MODE] Running with test repository...
-    python src\main.py --package A --repo .\tests\test_graph.txt --mode test --version 1.0
+    python -m src.main --package A --repo .\tests\test_graph.txt --mode test --version 1.0
+) else if "%1"=="unittest" (
+    echo [UNITTEST] Running automated tests...
+    python -m unittest discover -s tests -v
 ) else (
     echo [REAL MODE] Running with real repository...
-    python src\main.py --package bash --repo https://archive.ubuntu.com/ubuntu --mode real --version 5.0-4ubuntu1
+    python -m src.main --package bash --repo http://archive.ubuntu.com/ubuntu/dists/jammy/main/binary-amd64/Packages.gz --mode real --version 5.1-6ubuntu1
 )

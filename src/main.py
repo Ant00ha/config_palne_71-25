@@ -1,11 +1,9 @@
 import argparse
 import sys
 import os
+from src.repository import fetch_packages_file, parse_package_dependencies # Импорт модуля Этапа 2
 
 def validate_url_or_path(value):
-    """
-    Проверяет, является ли строка URL-адресом или существующим путем.
-    """
     if value.startswith("http://") or value.startswith("https://"):
         return value
     elif os.path.exists(value):
@@ -15,47 +13,17 @@ def validate_url_or_path(value):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Инструмент визуализации графа зависимостей (Этап 1: Конфигурация)"
+        description="Инструмент визуализации графа зависимостей (Этап 2: Сбор данных)"
     )
-
-    # имя пакета
-    parser.add_argument(
-        "--package", "-p",
-        required=True,
-        type=str,
-        help="Имя анализируемого пакета (например, bash)"
-    )
-
-    # url репозитория или путь к файлу
-    parser.add_argument(
-        "--repo", "-r",
-        required=True,
-        type=validate_url_or_path,
-        help="URL-адрес репозитория или путь к файлу тестового репозитория"
-    )
-
-    # режим работы
-    parser.add_argument(
-        "--mode", "-m",
-        required=True,
-        choices=["real", "test"],
-        help="Режим работы с репозиторием: 'real' (URL) или 'test' (локальный файл)"
-    )
-
-    # версия пакета
-    parser.add_argument(
-        "--version", "-v",
-        required=True,
-        type=str,
-        help="Версия пакета (например, 5.0-4ubuntu1)"
-    )
-
+    parser.add_argument("--package", "-p", required=True, type=str, help="Имя анализируемого пакета")
+    parser.add_argument("--repo", "-r", required=True, type=validate_url_or_path, help="URL-адрес репозитория")
+    parser.add_argument("--mode", "-m", required=True, choices=["real", "test"], help="Режим работы")
+    parser.add_argument("--version", "-v", required=True, type=str, help="Версия пакета")
     return parser.parse_args()
 
 def main():
     try:
         args = parse_arguments()
-        
         
         print("--- Параметры конфигурации ---")
         print(f"package_name: {args.package}")
@@ -64,8 +32,26 @@ def main():
         print(f"package_version: {args.version}")
         print("------------------------------")
         
-        print("Этап 1 успешно завершен. Параметры приняты.")
-
+        
+        if args.mode == "real":
+            
+            content = fetch_packages_file(args.repo)
+            
+            
+            deps = parse_package_dependencies(content, args.package, args.version)
+            
+            
+            if deps is None:
+                print(f"[Ошибка] Пакет '{args.package}' версии '{args.version}' не найден.")
+            elif not deps:
+                print(f"У пакета '{args.package}' нет прямых зависимостей.")
+            else:
+                print(f"Прямые зависимости для {args.package} ({args.version}):")
+                for d in deps:
+                    print(f" - {d}")
+        else:
+            print("Режим 'test' будет реализован на Этапе 3.")
+            
     except Exception as e:
         print(f"Ошибка: {e}", file=sys.stderr)
         sys.exit(1)

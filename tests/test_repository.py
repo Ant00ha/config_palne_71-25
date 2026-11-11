@@ -1,0 +1,63 @@
+import unittest
+from src.repository import parse_package_dependencies
+
+class TestRepositoryParsing(unittest.TestCase):
+
+    def setUp(self): 
+        self.mock_packages_text = """
+Package: bash
+Version: 5.1-6ubuntu1
+Architecture: amd64
+Depends: base-files (>= 1.0), debianutils (>= 1.0), libc6 (>= 2.34), libtinfo6 (>= 6)
+Description: GNU Bourne Again SHell
+ Bash is an sh-compatible command language interpreter.
+
+Package: coreutils
+Version: 8.32-4.1ubuntu1
+Architecture: amd64
+Depends: libc6 (>= 2.34), libssl3 (>= 3.0.0), libselinux1 (>= 3.1)
+Description: GNU core utilities
+ Basic file, shell and text manipulation utilities.
+
+Package: no-deps-package
+Version: 1.0.0
+Architecture: amd64
+Description: Package with no dependencies
+ This package has no Depends field.
+"""
+
+    def test_parse_existing_package(self):
+        """Тест 1: Успешный парсинг пакета с зависимостями"""
+        deps = parse_package_dependencies(self.mock_packages_text, "bash", "5.1-6ubuntu1")
+        
+        self.assertIsNotNone(deps)
+        self.assertEqual(len(deps), 4)
+        self.assertIn("base-files", deps)
+        self.assertIn("libc6", deps)
+        self.assertIn("libtinfo6", deps)
+        # Проверяем, что версии в скобках отброшены
+        self.assertNotIn("libc6 (>= 2.34)", deps)
+
+    def test_parse_package_no_dependencies(self):
+        """Тест 2: Пакет без поля Depends"""
+        deps = parse_package_dependencies(self.mock_packages_text, "no-deps-package", "1.0.0")
+        
+        # Если зависимости есть в поле, но их нет, должен вернуться пустой список
+        self.assertIsNotNone(deps)
+        self.assertEqual(len(deps), 0)
+
+    def test_parse_wrong_version(self):
+        """Тест 3: Пакет есть, но версия не совпадает"""
+        deps = parse_package_dependencies(self.mock_packages_text, "bash", "9.9.9-wrong")
+        
+        # Если версия не найдена, возвращается None
+        self.assertIsNone(deps)
+
+    def test_parse_non_existent_package(self):
+        """Тест 4: Пакета нет в репозитории"""
+        deps = parse_package_dependencies(self.mock_packages_text, "unknown-package", "1.0")
+        
+        self.assertIsNone(deps)
+
+if __name__ == '__main__':
+    unittest.main()
