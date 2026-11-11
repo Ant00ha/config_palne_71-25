@@ -33,7 +33,7 @@ class TestRepositoryParsing(unittest.TestCase):
 
     def test_parse_existing_package(self):
         """Тест 1: Успешный парсинг пакета с зависимостями."""
-        self.set_up()  # Ручной вызов вместо стандартного setUp
+        self.set_up()
         deps = parse_package_dependencies(
             self.mock_packages_text, "bash", "5.1-6ubuntu1"
         )
