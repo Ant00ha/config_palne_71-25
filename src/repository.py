@@ -2,23 +2,22 @@ import urllib.request
 import urllib.error
 import gzip
 
+
 def fetch_packages_file(repo_url):
-    """
-    Скачивает файл Packages (или Packages.gz) по указанному URL.
-    Возвращает текст в виде строки.
-    """
+    """Скачивает файл Packages (или Packages.gz) по URL."""
     print(f"Скачивание данных из: {repo_url} ...")
     
-    try:# Добавляем User-Agent, чтобы сервер Ubuntu не блокировал запрос
+    try:
         req = urllib.request.Request(
             repo_url, 
-            headers={'User-Agent': 'Mozilla/5.0 (DependencyVisualizer/1.0)'}
+            headers={
+                'User-Agent': 'Mozilla/5.0 (DependencyVisualizer/1.0)'
+            }
         )
         
         with urllib.request.urlopen(req) as response:
             data = response.read()
             
-        # Проверяем, сжат ли файл (по расширению или по магическим байтам gzip)
         if repo_url.endswith('.gz') or data[:2] == b'\x1f\x8b':
             print("Обнаружен сжатый файл (gzip). Распаковка...")
             data = gzip.decompress(data)
@@ -26,45 +25,52 @@ def fetch_packages_file(repo_url):
         return data.decode('utf-8')
         
     except urllib.error.URLError as e:
-        raise RuntimeError(f"Ошибка сети при скачивании {repo_url}: {e}")
+        raise RuntimeError(
+            f"Ошибка сети при скачивании {repo_url}: {e}"
+        )
     except Exception as e:
         raise RuntimeError(f"Ошибка обработки файла: {e}")
 
+
+def _extract_package_fields(block):
+    """Извлекает имя, версию и строку зависимостей из блока."""
+    pkg_name = None
+    pkg_version = None
+    depends_line = None
+    
+    for line in block.split('\n'):
+        if line.startswith('Package: '):
+            pkg_name = line[len('Package: '):].strip()
+        elif line.startswith('Version: '):
+            pkg_version = line[len('Version: '):].strip()
+        elif line.startswith('Depends: '):
+            depends_line = line[len('Depends: '):].strip()
+            
+    return pkg_name, pkg_version, depends_line
+
+
+def _parse_depends_string(depends_line):
+    """Превращает строку 'Depends: ...' в список имен пакетов."""
+    if not depends_line:
+        return []
+    
+    deps = []
+    for dep in depends_line.split(','):
+        dep = dep.strip()
+        clean_dep = dep.split('(')[0].split('|')[0].strip()
+        if clean_dep:
+            deps.append(clean_dep)
+    return deps
+
+
 def parse_package_dependencies(packages_text, target_package, target_version):
-    """
-    Ищет нужный пакет и версию в тексте, извлекает поле Depends.
-    Возвращает список зависимостей или None, если пакет не найден.
-    """
-    # Файл Packages состоит из блоков, разделенных двумя переносами строки (\n\n)
+    """Ищет пакет и версию в тексте, возвращает список зависимостей."""
     blocks = packages_text.strip().split('\n\n')
     
     for block in blocks:
-        lines = block.split('\n')
-        pkg_name = None
-        pkg_version = None
-        depends_line = None
+        name, version, depends = _extract_package_fields(block)
         
-        for line in lines:
-            if line.startswith('Package: '):
-                pkg_name = line[len('Package: '):].strip()
-            elif line.startswith('Version: '):
-                pkg_version = line[len('Version: '):].strip()
-            elif line.startswith('Depends: '):
-                depends_line = line[len('Depends: '):].strip()
-                
-        # Проверяем совпадение имени и версии
-        if pkg_name == target_package and pkg_version == target_version:
-            if not depends_line:
-                return [] # Зависимостей нет
-            
-            deps = []
-            # Строка зависимостей выглядит так: "libc6 (>= 2.34), libtinfo6 (>= 6) | libtinfo5"
-            for dep in depends_line.split(','):
-                dep = dep.strip()
-                # Убираем версию в скобках и альтернативные варианты (через |)
-                clean_dep = dep.split('(')[0].split('|')[0].strip()
-                if clean_dep:
-                    deps.append(clean_dep)
-            return deps
+        if name == target_package and version == target_version:
+            return _parse_depends_string(depends)
             
     return None

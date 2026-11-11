@@ -1,11 +1,13 @@
 import os
-import subprocess
+
 
 def generate_plantuml_code(graph, package_name):
-    lines = []
-    lines.append("@startuml")
-    lines.append(f"title Dependency Graph for {package_name}")
-    lines.append("skinparam linetype ortho")
+    """Генерирует текст PlantUML-диаграммы для графа."""
+    lines = [
+        "@startuml",
+        f"title Dependency Graph for {package_name}",
+        "skinparam linetype ortho"
+    ]
     
     for pkg, deps in graph.items():
         if not deps:
@@ -17,7 +19,9 @@ def generate_plantuml_code(graph, package_name):
     lines.append("@enduml")
     return "\n".join(lines)
 
+
 def save_and_open_graph(graph, package_name, filename="graph.puml"):
+    """Сохраняет PlantUML код в файл и пытается открыть его."""
     print("Генерация кода PlantUML...")
     puml_code = generate_plantuml_code(graph, package_name)
     
@@ -30,11 +34,9 @@ def save_and_open_graph(graph, package_name, filename="graph.puml"):
         
     print(f"Файл сохранен: {filename}")
     
-    # Пытаемся открыть файл через системный редактор (обычно это VS Code или Notepad)
-    # Если у вас установлено расширение PlantUML в VS Code, он покажет картинку.
     try:
         os.startfile(filename)
-        print("Файл открыт в программе по умолчанию. Если вы используете VS Code с расширением PlantUML, вы увидите диаграмму.")
+        print("Файл открыт в программе по умолчанию.")
     except Exception as e:
         print(f"Не удалось автоматически открыть файл: {e}")
-        print("Откройте его вручную в VS Code (нужно расширение PlantUML).")
+        print("Откройте его вручную в VS Code.")

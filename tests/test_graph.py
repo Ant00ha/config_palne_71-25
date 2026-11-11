@@ -1,11 +1,18 @@
 import unittest
 import os
 import tempfile
-from src.graph import parse_test_graph, build_dependency_graph, build_reverse_graph, get_reverse_dependencies
+from src.graph import (
+    parse_test_graph,
+    build_dependency_graph,
+    build_reverse_graph,
+    get_reverse_dependencies
+)
+
 
 class TestGraphLogic(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self):  # noqa: N802
+        """Подготовка тестовых данных."""
         self.test_graph_data = {
             'A': ['B', 'C'],
             'B': ['D'],
@@ -16,7 +23,10 @@ class TestGraphLogic(unittest.TestCase):
         }
 
     def test_build_dependency_graph_test_mode(self):
-        graph = build_dependency_graph('A', None, is_test_mode=True, test_graph=self.test_graph_data)
+        """Тест построения графа в тестовом режиме."""
+        graph = build_dependency_graph(
+            'A', None, is_test_mode=True, test_graph=self.test_graph_data
+        )
         
         self.assertIn('A', graph)
         self.assertIn('B', graph)
@@ -25,6 +35,7 @@ class TestGraphLogic(unittest.TestCase):
         self.assertEqual(graph['B'], ['D'])
 
     def test_build_reverse_graph(self):
+        """Тест построения обратного графа."""
         reverse_graph = build_reverse_graph(self.test_graph_data)
         
         self.assertIn('D', reverse_graph)
@@ -35,25 +46,37 @@ class TestGraphLogic(unittest.TestCase):
         self.assertIn('D', reverse_graph['A'])
 
     def test_get_reverse_dependencies_transitive(self):
-        reverse_deps = get_reverse_dependencies('D', self.test_graph_data, is_test_mode=True)
+        """Тест поиска транзитивных обратных зависимостей."""
+        reverse_deps = get_reverse_dependencies(
+            'D', self.test_graph_data, is_test_mode=True
+        )
         
         self.assertIn('B', reverse_deps)
         self.assertIn('C', reverse_deps)
         self.assertIn('A', reverse_deps)
 
     def test_get_reverse_dependencies_no_deps(self):
-        reverse_deps = get_reverse_dependencies('F', self.test_graph_data, is_test_mode=True)
+        """Тест поиска обратных зависимостей без вложенности."""
+        reverse_deps = get_reverse_dependencies(
+            'F', self.test_graph_data, is_test_mode=True
+        )
         
         self.assertIn('E', reverse_deps)
         self.assertNotIn('A', reverse_deps)
 
     def test_get_reverse_dependencies_isolated(self):
-        reverse_deps = get_reverse_dependencies('Z', self.test_graph_data, is_test_mode=True)
+        """Тест поиска для изолированного пакета."""
+        reverse_deps = get_reverse_dependencies(
+            'Z', self.test_graph_data, is_test_mode=True
+        )
         
         self.assertEqual(reverse_deps, [])
 
     def test_parse_test_graph_file(self):
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as f:
+        """Тест парсинга файла тестового графа."""
+        with tempfile.NamedTemporaryFile(
+            mode='w', delete=False, encoding='utf-8'
+        ) as f:
             f.write("X: Y, Z\n")
             f.write("Y: Z\n")
             f.write("Z:\n")
@@ -66,6 +89,7 @@ class TestGraphLogic(unittest.TestCase):
             self.assertEqual(graph['Z'], [])
         finally:
             os.remove(temp_path)
+
 
 if __name__ == '__main__':
     unittest.main()
