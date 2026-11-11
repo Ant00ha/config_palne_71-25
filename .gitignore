@@ -27,3 +27,7 @@ var/
 
 # OS
 .DS_Store
+# Generated diagrams
+*.puml
+graph.svg
+graph.png

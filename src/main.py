@@ -3,6 +3,7 @@ import sys
 import os
 from src.repository import fetch_packages_file, parse_package_dependencies
 from src.graph import parse_test_graph, build_dependency_graph, get_reverse_dependencies
+from src.visualizer import save_and_open_graph
 
 def validate_url_or_path(value):
     if value.startswith("http://") or value.startswith("https://"):
@@ -14,13 +15,14 @@ def validate_url_or_path(value):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Инструмент визуализации графа зависимостей (Этап 4: Обратные зависимости)"
+        description="Инструмент визуализации графа зависимостей (Этап 5: Визуализация)"
     )
     parser.add_argument("--package", "-p", required=True, type=str, help="Имя анализируемого пакета")
     parser.add_argument("--repo", "-r", required=True, type=validate_url_or_path, help="URL репозитория или путь к тестовому файлу")
     parser.add_argument("--mode", "-m", required=True, choices=["real", "test"], help="Режим работы")
-    parser.add_argument("--version", "-v", required=True, type=str, help="Версия пакета (используется только в real mode)")
-    parser.add_argument("--reverse", "-rv", action="store_true", help="Показать обратные зависимости (кто зависит от пакета)")
+    parser.add_argument("--version", "-v", required=True, type=str, help="Версия пакета")
+    parser.add_argument("--reverse", "-rv", action="store_true", help="Показать обратные зависимости")
+    parser.add_argument("--visualize", "-vis", action="store_true", help="Открыть граф в браузере (PlantUML)")
     return parser.parse_args()
 
 def get_real_dependencies(package_name, repo_url, version, cache_dict):
@@ -41,7 +43,6 @@ def main():
         print(f"repository_url: {args.repo}")
         print(f"mode: {args.mode}")
         print(f"package_version: {args.version}")
-        print(f"reverse_mode: {args.reverse}")
         print("------------------------------")
         
         graph = {}
@@ -60,12 +61,11 @@ def main():
 
         if args.reverse:
             reverse_deps = get_reverse_dependencies(args.package, graph, is_test_mode=(args.mode == "test"))
-            
             print("\n--- Результат (Обратные зависимости) ---")
             if not reverse_deps:
                 print(f"Пакеты, зависящие от '{args.package}', не найдены.")
             else:
-                print(f"Пакеты, которые зависят от {args.package} (транзитивно):")
+                print(f"Пакеты, которые зависят от {args.package}:")
                 for dep in reverse_deps:
                     print(f" - {dep}")
         else:
@@ -75,6 +75,9 @@ def main():
             else:
                 for pkg, deps in graph.items():
                     print(f"{pkg} -> {', '.join(deps) if deps else '[]'}")
+                    
+            if args.visualize and graph:
+                save_and_open_graph(graph, args.package)
 
     except Exception as e:
         print(f"Ошибка: {e}", file=sys.stderr)
