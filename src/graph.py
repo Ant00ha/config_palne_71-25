@@ -51,3 +51,47 @@ def build_dependency_graph(start_package, fetcher_func, is_test_mode=False, test
                 stack.append(dep)
 
     return full_graph
+
+def build_reverse_graph(graph):
+    reverse_graph = {}
+    
+    for pkg, deps in graph.items():
+        if pkg not in reverse_graph:
+            reverse_graph[pkg] = []
+            
+        for dep in deps:
+            if dep not in reverse_graph:
+                reverse_graph[dep] = []
+            reverse_graph[dep].append(pkg)
+            
+    return reverse_graph
+
+def get_reverse_dependencies(target_package, graph, is_test_mode=False, fetcher_func=None):
+    print(f"Поиск обратных зависимостей для '{target_package}'...")
+    result = []
+    
+    if is_test_mode:
+        reverse_graph = build_reverse_graph(graph)
+        if target_package in reverse_graph:
+            stack = list(reverse_graph[target_package])
+            visited = set()
+            
+            while stack:
+                current = stack.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                result.append(current)
+                
+                if current in reverse_graph:
+                    for parent in reverse_graph[current]:
+                        if parent not in visited:
+                            stack.append(parent)
+        return result
+
+    else:
+        print("Анализ всех пакетов в репозитории для поиска обратных зависимостей...")
+        for pkg, deps in graph.items():
+            if target_package in deps:
+                result.append(pkg)
+        return result
